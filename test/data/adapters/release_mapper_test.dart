@@ -5,28 +5,32 @@ import 'package:getapps/domain/domain.dart';
 
 void main() {
   group('ReleaseMapper.toApp', () {
-    const release = AppReleaseEntity(
-      assets: [''],
-      tagName: '',
-    );
+    late InstalledAppEntity installedApp;
 
-    const installedApp = InstalledAppEntity(
-      repository: RepositoryEntity(
-        organizationName: 'Flutterando',
-        projectName: 'yuno',
-        provider: GitRepositoryProvider.github,
-      ),
-      packageInfo: PackageInfoEntity(
-        id: '1',
-        imageBytes: [],
-        version: '',
-      ),
-      lastRelease: release,
-      currentRelease: release,
-    );
+    setUp(() {
+      const release = AppReleaseEntity(
+        assets: [''],
+        tagName: '',
+      );
 
+      installedApp = const InstalledAppEntity(
+        repository: RepositoryEntity(
+          organizationName: 'Flutterando',
+          projectName: 'yuno',
+          provider: GitRepositoryProvider.github,
+        ),
+        packageInfo: PackageInfoEntity(
+          id: '1',
+          imageBytes: [],
+          version: '',
+        ),
+        lastRelease: release,
+        currentRelease: release,
+      );
+    });
     test('returns Success when JSON is valid and has at least one apk asset',
         () {
+      // Arrange
       final validJson = {
         'tag_name': 'v2.0.0',
         'assets': [
@@ -35,8 +39,10 @@ void main() {
         ],
       };
 
+      // Act
       final result = ReleaseMapper.toApp(installedApp, validJson);
 
+      // Assert
       expect(result.isSuccess(), isTrue);
       result.onSuccess((updatedApp) {
         expect(updatedApp.lastRelease.tagName, equals('v2.0.0'));
@@ -48,6 +54,7 @@ void main() {
     });
 
     test('returns Failure when JSON is valid but has no apk asset', () {
+      // Arrange
       final jsonWithoutApk = {
         'tag_name': 'v2.0.0',
         'assets': [
@@ -56,8 +63,10 @@ void main() {
         ],
       };
 
+      // Act
       final result = ReleaseMapper.toApp(installedApp, jsonWithoutApk);
 
+      // Assert
       expect(result.isError(), isTrue);
       result.onFailure((failure) {
         expect(failure, isA<RemoteRepositoryException>());
@@ -67,14 +76,17 @@ void main() {
     });
 
     test('returns Failure when JSON is invalid', () {
+      // Arrange
       final invalidJson = {
         'assets': [
           {'browser_download_url': 'https://example.com/app.apk'},
         ],
       };
 
+      // Act
       final result = ReleaseMapper.toApp(installedApp, invalidJson);
 
+      // Assert
       expect(result.isError(), isTrue);
       result.onFailure((failure) {
         expect(failure, isA<RemoteRepositoryException>());
